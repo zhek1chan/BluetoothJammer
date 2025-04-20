@@ -17,12 +17,13 @@ import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import api.BluetoothDeviceInfo
-import api.ScanNearbyDevices
+import com.eikarna.bluetoothjammer.api.BluetoothDeviceInfo
+import com.eikarna.bluetoothjammer.api.ScanNearbyDevices
 import java.util.Date
 
 class MainActivity : AppCompatActivity() {
@@ -33,24 +34,21 @@ class MainActivity : AppCompatActivity() {
     private val scanner = ScanNearbyDevices.getInstance()
 
     companion object {
-        private const val PERMISSION_REQUEST_CODE = 101
+        const val PERMISSION_REQUEST_CODE = 101
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         listView = findViewById(R.id.deviceListView)
-
         // Check and request necessary permissions
         checkBluetoothStatusAndPermissions()
-
         val requestCode = 1;
         val discoverableIntent: Intent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
-            putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 1200)
+            putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 5000)
         }
         startActivityForResult(discoverableIntent, requestCode)
-
         // Register for broadcasts when a device is discovered.
         var filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
         registerReceiver(receiver, filter)
@@ -58,6 +56,11 @@ class MainActivity : AppCompatActivity() {
         // Register for broadcasts when discovery has finished
         filter = IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
         this.registerReceiver(receiver, filter)
+    }
+
+    private fun isBluetoothEnabled(): Boolean {
+        val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+        return bluetoothAdapter?.isEnabled ?: false
     }
 
     private fun checkBluetoothStatusAndPermissions() {
@@ -103,8 +106,20 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("MissingPermission")
     private fun showBluetoothDisabledDialog() {
-        val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-        startActivityForResult(enableBtIntent, 1)
+        val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+        builder
+            .setMessage("Bluetooth is Off")
+            .setTitle("Please turn on Bluetooth\nin your divice settings")
+            .setPositiveButton("Go to settings") { dialog, which ->
+                val intent = Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel") { dialog, which ->
+                finishActivity(0)
+            }
+
+        val dialog: AlertDialog = builder.create()
+        dialog.show()
     }
 
     private fun checkPermissionsAndStartScanning() {

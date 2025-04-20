@@ -9,6 +9,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 import androidx.core.widget.doAfterTextChanged
 import api.L2capFloodAttack
@@ -42,6 +43,7 @@ class AttackActivity : AppCompatActivity() {
         var loggingStatus = true
     }
 
+    @SuppressLint("NewApi")
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d("AttackActivity", "onCreate called")
@@ -116,7 +118,7 @@ class AttackActivity : AppCompatActivity() {
     private fun stopAttack() {
         isAttacking = false
         buttonStartStop.text = "Start"
-        Logger.appendLog(logAttack, "Attack Stopped! Force close this app..")
+        Logger.appendLog(logAttack, "Attack Stopped!..")
         BluetoothAdapter.getDefaultAdapter().startDiscovery()
         L2capFloodAttack(address).stopAttack()
     }
