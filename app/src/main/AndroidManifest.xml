@@ -39,8 +39,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Material3.DynamicColors.DayNight.NoActionBar"
-        tools:targetApi="31">
+        android:theme="@style/Theme.Material3.DynamicColors.DayNight.NoActionBar">
         <activity
             android:name=".LaunchActivity"
             android:exported="true"

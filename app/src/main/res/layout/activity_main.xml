@@ -1,27 +1,26 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+				android:layout_width="match_parent"
+				android:layout_height="match_parent">
 
+	<FrameLayout
+		android:layout_width="match_parent"
+		android:layout_height="50dp">
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:background="@color/material_dynamic_neutral_variant30">
+		<com.google.android.material.textview.MaterialTextView
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:paddingStart="15dp"
+			android:paddingTop="10dp"
+			android:background="@drawable/box_line_at_bottom"
+			android:text="List of available Bluetooth devices"
+			android:textSize="22sp">
+		</com.google.android.material.textview.MaterialTextView>
+	</FrameLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="List of available devices"
-            android:paddingTop="10dp"
-            android:paddingStart="15dp"
-            android:textSize="20sp">
-        </TextView>
-    </FrameLayout>
-    <ListView
-        android:id="@+id/deviceListView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:textSize="9sp"
-        android:paddingTop="50dp"/>
-
+	<ListView
+		android:id="@+id/deviceListView"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:paddingTop="50dp"
+		android:textSize="12sp" />
 </RelativeLayout>
