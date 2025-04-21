@@ -41,7 +41,7 @@ class AttackActivity: AppCompatActivity()
 		var loggingStatus = true
 	}
 
-	@SuppressLint("NewApi")
+	@SuppressLint("NewApi", "SetTextI18n")
 	@RequiresApi(Build.VERSION_CODES.O)
 	override fun onCreate(savedInstanceState: Bundle?)
 	{
@@ -79,8 +79,13 @@ class AttackActivity: AppCompatActivity()
 		}
 		// Threading Input listener
 		viewThreads.doAfterTextChanged { str ->
-			if(str != null)
+			if(str != null && str.toString().isNotEmpty())
 			{
+				if(str.toString().toInt() > 1024)
+				{
+					Toast.makeText(this@AttackActivity, "Threads are limited to 1024", Toast.LENGTH_SHORT).show()
+					viewThreads.setText("1024")
+				}
 				if(str.toString() != "" && str.isDigitsOnly())
 				{
 					threads = str.toString().toInt()

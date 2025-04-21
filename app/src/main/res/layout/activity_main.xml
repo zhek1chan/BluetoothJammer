@@ -5,13 +5,12 @@
 	<FrameLayout
 		android:layout_width="match_parent"
 		android:layout_height="50dp">
-
 		<com.google.android.material.textview.MaterialTextView
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:paddingStart="15dp"
 			android:paddingTop="10dp"
-			android:background="@drawable/box_line_at_bottom"
+			android:textStyle="italic"
+			android:textAlignment="center"
 			android:text="List of available Bluetooth devices"
 			android:textSize="22sp">
 		</com.google.android.material.textview.MaterialTextView>
@@ -21,6 +20,6 @@
 		android:id="@+id/deviceListView"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:paddingTop="50dp"
+		android:paddingTop="55dp"
 		android:textSize="12sp" />
 </RelativeLayout>

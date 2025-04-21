@@ -204,7 +204,7 @@ class MainActivity: AppCompatActivity()
 		// Start scanning for nearby Bluetooth devices
 		scanner.startScanning(this) { discoveredDevices ->
 			devices = discoveredDevices
-			val deviceNames = devices.map { "name: ${it.name}\nmac: (${it.address})" }
+			val deviceNames = devices.map { "name: ${it.name}, mac: (${it.address})" }
 			// Set up ArrayAdapter to show the list of devices
 			deviceListAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, deviceNames)
 			listView.adapter = deviceListAdapter
