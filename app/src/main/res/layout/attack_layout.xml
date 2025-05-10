@@ -24,7 +24,7 @@
         <com.google.android.material.textview.MaterialTextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Threads: "
+            android:text="Кол-во потоков: "
             android:textSize="12sp"/>
 
         <com.google.android.material.textfield.TextInputEditText
@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:autofillHints="8"
             android:inputType="numberDecimal"
-            android:hint="eg. 8 Threads (Coroutines)"
+            android:hint="Например 8 (более 20 не рекоммендуется)"
             android:imeOptions="actionNext"
             android:textSize="12sp"
             android:cursorVisible="false" />
@@ -48,7 +48,7 @@
         android:id="@+id/buttonStartStop"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start"
+        android:text="Начать"
         android:layout_weight="1"/>
 
         <com.google.android.material.materialswitch.MaterialSwitch
@@ -57,7 +57,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:checked="true"
-            android:text="Log"
+            android:text="Лог"
             android:textSize="12sp"
             android:textAlignment="textEnd" />
 
@@ -79,14 +79,16 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:padding="6dp"
+            android:background="#4e4e4e"
             android:scrollbars="vertical"> <!-- Enables vertical scrollbar -->
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/logTextView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:maxLines="100"
-                android:padding="8dp"
+                android:paddingBottom="8dp"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
                 android:scrollbarStyle="insideOverlay"
                 android:textColor="#00FF00"
                 android:textSize="9sp" />

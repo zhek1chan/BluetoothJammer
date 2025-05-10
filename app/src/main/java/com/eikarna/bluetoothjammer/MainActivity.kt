@@ -15,16 +15,15 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.ArrayAdapter
+import android.widget.ImageView
 import android.widget.ListView
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.eikarna.bluetoothjammer.api.BluetoothDeviceInfo
 import com.eikarna.bluetoothjammer.api.ScanNearbyDevices
-import java.util.Date
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,17 +36,21 @@ class MainActivity : AppCompatActivity() {
         const val PERMISSION_REQUEST_CODE = 101
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         listView = findViewById(R.id.deviceListView)
+        val button = findViewById<ImageView>(R.id.infoButton)
+        button.setOnClickListener {
+            startActivity(Intent(this, DisclaimerActivity::class.java))
+        }
         // Check and request necessary permissions
         checkBluetoothStatusAndPermissions()
-        val requestCode = 1;
+        val requestCode = 1
         val discoverableIntent: Intent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
             putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 5000)
         }
+        @Suppress("DEPRECATION")
         startActivityForResult(discoverableIntent, requestCode)
         // Register for broadcasts when a device is discovered.
         var filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
@@ -58,17 +61,13 @@ class MainActivity : AppCompatActivity() {
         this.registerReceiver(receiver, filter)
     }
 
-    private fun isBluetoothEnabled(): Boolean {
-        val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-        return bluetoothAdapter?.isEnabled ?: false
-    }
-
     private fun checkBluetoothStatusAndPermissions() {
         val bluetoothManager: BluetoothManager = getSystemService(BluetoothManager::class.java)
         val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
             // Bluetooth is either not supported or not enabled, show dialog
             showBluetoothDisabledDialog()
+            finishActivity(0)
         } else {
             // Bluetooth is enabled, proceed with permission checks
             checkPermissionsAndStartScanning()
@@ -76,6 +75,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Create a BroadcastReceiver for ACTION_FOUND.
+    @Suppress("DEPRECATION")
     private val receiver = object : BroadcastReceiver() {
 
         @SuppressLint("MissingPermission")
@@ -94,10 +94,6 @@ class MainActivity : AppCompatActivity() {
                     name = device?.name ?: "Unknown Device",
                     address = device?.address ?: "00:00:00:00"
                 )
-
-                // Print toast message if new device found
-                Toast.makeText(this@MainActivity, "FOUND NEW DEVICE!\n\nName: ${deviceInfo.name}\nAddress: ${deviceInfo.address}\n\n${Date()}", Toast.LENGTH_SHORT).show()
-
                 // Add the device to the list and notify the adapter
                 ScanNearbyDevices.devicesList.add(deviceInfo)
             }
@@ -108,13 +104,13 @@ class MainActivity : AppCompatActivity() {
     private fun showBluetoothDisabledDialog() {
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
         builder
-            .setMessage("Bluetooth is Off")
-            .setTitle("Please turn on Bluetooth\nin your divice settings")
-            .setPositiveButton("Go to settings") { dialog, which ->
+            .setMessage("Bluetooth выключен")
+            .setTitle("Пожалуйста включите его в настройках")
+            .setPositiveButton("Go to settings") { _, _ ->
                 val intent = Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)
                 startActivity(intent)
             }
-            .setNegativeButton("Cancel") { dialog, which ->
+            .setNegativeButton("Cancel") { _, _ ->
                 finishActivity(0)
             }
 
@@ -206,12 +202,12 @@ class MainActivity : AppCompatActivity() {
     // Show device details in a dialog
     private fun showDeviceInfo(device: BluetoothDeviceInfo) {
         val message =
-            "Name: ${device.name}\nAddress: ${device.address}"
+            "Название: ${device.name}\nАдрес: ${device.address}"
 
         val dialogBuilder = AlertDialog.Builder(this)
-        dialogBuilder.setTitle("Device Info")
+        dialogBuilder.setTitle("Информация об устройстве")
             .setMessage(message)
-            .setPositiveButton("Attack") { dialog, _ ->
+            .setPositiveButton("Атаковать") { dialog, _ ->
                 dialog.dismiss()
                 scanner.stopScanning()
                 val intent = Intent(this, AttackActivity::class.java).apply {
@@ -223,14 +219,18 @@ class MainActivity : AppCompatActivity() {
                 // Start AttackActivity
                 startActivity(intent)
             }
-            .setNegativeButton("Close") { dialog, _ ->
+            .setNegativeButton("Закрыть") { dialog, _ ->
                 dialog.dismiss()
             }
-            .setNeutralButton("Copy Info") { _, _ ->
+            .setNeutralButton("Скопировать") { _, _ ->
                 val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val clip = android.content.ClipData.newPlainText("Device Info", message)
                 clipboard.setPrimaryClip(clip)
-                Toast.makeText(this, "Device info copied to clipboard", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Информация об устройстве была скопирована",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         dialogBuilder.create().show()
     }
