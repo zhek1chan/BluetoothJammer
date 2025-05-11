@@ -1,4 +1,4 @@
-package api
+package com.eikarna.bluetoothjammer.api
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -59,8 +59,8 @@ class ScanNearbyDevices {
                     // Return the list of devices to the callback function
                     callback(devicesList)
 
-                    // Schedule the next scan after 1 second
-                    handler.postDelayed(this, 1000)
+                    // Schedule the next scan after 5 second
+                    handler.postDelayed(this, 5000)
                 }
             }
 

